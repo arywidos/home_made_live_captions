@@ -1,0 +1,8 @@
+# hasil program — jangan diunggah
+live-captions_*.txt
+uji-run.log
+
+# lingkungan Python
+.venv/
+__pycache__/
+*.pyc
