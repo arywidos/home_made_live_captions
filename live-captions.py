@@ -105,6 +105,18 @@ def bikin_transcriber(ukuran, bahasa):
 
 # --------------------------------------------------------------- loopback --
 SR_DEV = HR   # sample rate device yang benar-benar terbuka (bisa != 16k di Mac)
+PUNCAK_EMA = 0.03  # perkiraan puncak mic utk gain adaptif (rata-rata bergerak)
+PESAN_GAIN = False # supaya pesan "mic pelan ..." tampil hanya sekali
+
+# ---- ambang hening mic: pola voice-claude ----------------------------------
+# Ambang dengar histeresis dari lantai derau yang dipelajari HANYA dari
+# potongan nyaris-sunyi (batas relatif lantai, bukan absolut — ruangan
+# bernoise tak boleh bikin lantai menempel ke ambient). Dicalik plafon:
+# mic pelan tetap lolos (Silero memilah derau di bawahnya), derau lantai
+# tidak masuk antrean → Whisper tak berhalusinasi di ruangan sepi.
+GATE_MULAI_MAX = 0.015   # plafon ambang memulai ujaran
+GATE_LANJUT_MAX = 0.010  # plafon ambang melanjutkan ujaran (histeresis)
+AMBIG_MIK = {}           # sumber -> {"lantai": float, "kumpul": bool}
 
 
 def cari_loopback(nama=None):
@@ -187,7 +199,7 @@ def thread_rekam(device, antre, sumber):
     berlabel sumber ('lawan' utk loopback / 'saya' utk mic).
     Di Mac, CoreAudio kadang menolak 16 kHz → fallback 48k/44.1k lalu
     di-resample ke 16k (np.interp, cukup untuk speech ASR)."""
-    global BERJALAN, SR_DEV
+    global BERJALAN, SR_DEV, PUNCAK_EMA, PESAN_GAIN
     # Python 3.14: filter warnings top-level TIDAK didengar thread rekaman
     # (filter jalan di thread utama, lolos di thread) → pasang ulang di sini
     warnings.filterwarnings("ignore", message="data discontinuity")
@@ -218,7 +230,40 @@ def thread_rekam(device, antre, sumber):
                     x_lama = np.arange(len(data)) / SR_DEV
                     x_baru = np.arange(n_baru) / HR
                     data = np.interp(x_baru, x_lama, data).astype(np.float32)
-                antre.put((sumber, data))
+                if sumber == "saya":
+                    # Mic pemakai sering pelan (array Realtek / headset BT).
+                    # Langkah 1 (pola voice-claude): gerbang hening — potongan
+                    # di bawah ambang tidak masuk antrean sama sekali.
+                    am = AMBIG_MIK.setdefault(
+                        sumber, {"lantai": 0.001, "kumpul": False})
+                    r = float(np.sqrt(np.mean(data * data)))
+                    if am["kumpul"]:
+                        g = min(max(am["lantai"] * 2, 0.007), GATE_LANJUT_MAX)
+                    else:
+                        g = min(max(am["lantai"] * 3, 0.012), GATE_MULAI_MAX)
+                    if r < g:
+                        if not am["kumpul"] and \
+                                r < am["lantai"] * 1.5 + 0.002:
+                            # kalibrasi lantai hanya dari yang nyaris hening
+                            am["lantai"] = 0.98 * am["lantai"] + 0.02 * r
+                        data = None
+                    else:
+                        # Langkah 2: gain adaptif utk ASR — mic BT/laptop
+                        # levelnya jauh di bawah yang Whisper sukai; ratakan
+                        # puncak ke ~0.7, dicalik 1..20, hening tak dikencang
+                        # (sudah tersaring gerbang).
+                        am["kumpul"] = True
+                        p = float(np.max(np.abs(data)))
+                        if p > 0.01:
+                            PUNCAK_EMA = 0.9 * PUNCAK_EMA + 0.1 * p
+                        gain = min(20.0, max(1.0, 0.7 / max(PUNCAK_EMA, 0.005)))
+                        data = np.clip(data * gain, -1.0, 1.0)
+                        if gain > 2.0 and not PESAN_GAIN:
+                            print(f"{CYAN}  (mic pelan → gain otomatis x{gain:.1f}){KELUAR}",
+                                  flush=True)
+                            PESAN_GAIN = True
+                if sumber != "saya" or data is not None:
+                    antre.put((sumber, data))
     except Exception as e:
         import traceback
         print(f"\n{KUNING}  [ERROR rekam ({sumber})] {e}{KELUAR}", flush=True)
@@ -346,7 +391,11 @@ def main():
         ts = get_speech_timestamps(audio, VAD_OPSI, sampling_rate=HR)
         segs = segmen_baru(ts)
         if not segs:
-            # tak ada bicara sama sekali → buang buffer (hening) biar hemat
+            # tak ada bicara sama sekali → buang buffer (hening) biar hemat;
+            # gerbang mic kembali ketat (pola _kumpul voice-claude)
+            amb = AMBIG_MIK.get(label)
+            if amb:
+                amb["kumpul"] = False
             if len(audio) > HR * 3:
                 st["audio"] = audio[len(audio) - HR * 1:]
             return
@@ -390,6 +439,9 @@ def main():
         # tick → teks kembar (bug dedup yang sudah diperbaiki)
         st["audio"] = audio[min(akhir, len(audio)):]
         st["tick"] = 0.0
+        amb = AMBIG_MIK.get(label)
+        if amb:
+            amb["kumpul"] = False
 
     t_mulai = time.time()
     try:
