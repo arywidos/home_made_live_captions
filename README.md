@@ -202,6 +202,23 @@ Kalau sukses, muncul:
 Uji: putar video YouTube yang ada bicara — teks harus muncul.
 Untuk **keluar**: `Ctrl+C` di Terminal.
 
+### 7. (Sekali saja) Siapkan tombol klik-dukali
+
+Sama seperti Windows punya `jalankan-captions.bat`, di Mac ada
+**`jalankan-captions.command`** — klik dua kali di Finder, otomatis buka
+Terminal dan mulai. Aktifkan sekali dari Terminal:
+
+```
+chmod +x jalankan-captions.command
+```
+
+Catatan: kalau repo ini diunduh sebagai ZIP (bukan git clone), macOS mungkin
+"kunci" file itu karena berasal dari internet — kalau muncul itu, klik kanan
+file-nya → **Open** sekali saja (macOS akan mempercayainya).
+
+Tambahan argumen juga bisa, mis. klik dua kali tidak fleksibel — dari
+Terminal: `./jalankan-captions.command --mic` atau `--lang en`.
+
 > **Trik Mac yang nyaman:** karena semua suara (termasuk percakapan yang kamu
 > ikut di meeting) lewat tempat yang sama, tak ada pengaturan tambahan per
 > aplikasi. WhatsApp Desktop, Zoom, Meet di browser — semua otomatis.
@@ -211,7 +228,7 @@ Untuk **keluar**: `Ctrl+C` di Terminal.
 ## Cara pakai saat meeting / call
 
 **Windows:** klik dua kali `jalankan-captions.bat`
-**Mac:** buka Terminal → `cd ~/Downloads/live-captions` → `.venv/bin/python3 -X utf8 live-captions.py`
+**Mac:** klik dua kali `jalankan-captions.command` di Finder (aktifkan dulu sekali: lihat bagian macOS langkah 7), atau dari Terminal: `./jalankan-captions.command`
 
 1. Tunggu hingga muncul `Whisper 'medium' jalan di ...`
 2. Buka WhatsApp Desktop / Zoom / whatever — mulai call
