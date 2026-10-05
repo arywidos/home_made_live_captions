@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-"""live-captions.py — caption live untuk audio sistem, bukan cuma Zoom.
+"""live-captions.py — caption live untuk audio sistem (Windows + macOS).
 
-Menangkap LOOPBACK speaker (semua yang keluar dari audio device: call
-WhatsApp desktop, Zoom, Google Meet, YouTube, media player, apa pun),
-lalu transkrip dengan faster-whisper lokal (CUDA RTX 3050 → fallback CPU).
+Menangkap audio yang KELUAR di komputer (semua aplikasi: call WhatsApp, Zoom,
+Google Meet, YouTube, media player, apa pun), lalu transkrip dengan
+faster-whisper lokal.
 
-Pola VAD/transcriber dipinjam dari voice-claude (Silero VAD + Whisper),
-hanya sumbernya ganti: mic → loopback speaker.
+Cara mengambil audio berbeda per OS:
+- Windows : LOOPBACK speaker (bawaan WASAPI) — tanpa perlu software tambahan.
+- macOS   : tidak ada loopback bawaan → audio harus diarahkan ke driver
+            gratis "BlackHole" (device audio virtual). Setup ada di README
+            bagian macOS (Multi-Output Device + izin microphone).
 
-Pakai:
-  python live-captions.py                 # default speaker + Whisper medium + bahasa id
-  python live-captions.py --device soundcore    # pilih speaker by nama (mis. BT headset)
-  python live-captions.py --lang en --model small
+Pola VAD/transcriber dipinjam dari voice-claude (Silero VAD + Whisper).
 
-Jalan pakai venv voice-claude:
+Pakai (Windows, venv voice-claude):
   C:\\DATAS\\voice-claude\\.venv\\Scripts\\python.exe -X utf8 live-captions.py
+Pakai (macOS):
+  python3 live-captions.py            # butuh BlackHole terpasang (README)
 """
 
 import argparse
@@ -69,13 +71,16 @@ def bikin_transcriber(ukuran, bahasa):
 
     model = None
     dev_aktif = None
-    for dev, dt in (("cuda", "float16"), ("cpu", "int8")):
+    # macOS: tanpa CUDA → langsung CPU int8 (ctranslate2 arm64)
+    rencana = (("cpu", "int8"),) if sys.platform == "darwin" \
+        else (("cuda", "float16"), ("cpu", "int8"))
+    for dev, dt in rencana:
         try:
             model = WhisperModel(ukuran, device=dev, compute_type=dt)
             dev_aktif = f"{dev.upper()} {dt}"
             break
         except Exception as e:
-            if dev == "cpu":
+            if dev == rencana[-1][0]:
                 raise
             print(f"  (CUDA gagal: {str(e)[:120]} — fallback CPU)", flush=True)
 
@@ -92,10 +97,47 @@ def bikin_transcriber(ukuran, bahasa):
 
 
 # --------------------------------------------------------------- loopback --
+SR_DEV = HR   # sample rate device yang benar-benar terbuka (bisa != 16k di Mac)
+
+
 def cari_loopback(nama=None):
-    """Pilih speaker → loopback mic-nya. soundcard: recorder loopback
-    dipakai lewat get_microphone(id_speaker, include_loopback=True)."""
+    """macOS : cari mic 'BlackHole' (device audio virtual tempat audio sistem
+                diarahkan — lihat README bagian macOS). `--device` untuk nama
+                lain kalau sengaja pakai setup berbeda.
+    Windows : loopback mic dari speaker (bawaan WASAPI, tanpa software);              `--device` untuk substring nama speaker (mis. headset Bluetooth)."""
     import soundcard as sc
+
+    if sys.platform == "darwin":
+        kandidat = sc.all_microphones()
+        pilih = None
+        if nama:
+            for m in kandidat:
+                if nama.lower() in m.name.lower():
+                    pilih = m
+                    break
+            if pilih is None:
+                sys.exit(f"  mic dengan nama '{nama}' tidak ditemukan. "
+                         f"Yang ada: {[m.name for m in kandidat[:12]]}")
+        else:
+            for m in kandidat:
+                if "blackhole" in m.name.lower():
+                    pilih = m
+                    break
+        if pilih is None:
+            sys.exit(
+                "  macOS: device 'BlackHole' tidak ketemu.\n"
+                "  1) Pasang BlackHole 2ch — https://existential.audio/blackhole/\n"
+                "     (atau di Terminal: brew install blackhole-2ch)\n"
+                "  2) Buat Multi-Output Device — lihat README bagian macOS,\n"
+                "     supaya suaranya tetap ke speaker sambil masuk BlackHole\n"
+                "  3) Izinkan akses microphone: System Settings → Privacy &\n"
+                "     Security → Microphone → centang Terminal/iTerm\n"
+                f"  Mic yang ada sekarang: {[m.name for m in kandidat[:12]]}"
+            )
+        print(f"  input: {pilih.name} (via BlackHole)", flush=True)
+        return pilih
+
+    # ------------------------- Windows -------------------------
     jika_semua = [s for s in sc.all_speakers()]
     pilih = None
     if nama:
@@ -114,16 +156,38 @@ def cari_loopback(nama=None):
 
 
 def thread_rekam(lb, antre):
-    """Ambil loopback 16k mono terus-menerus, taruh tiap potongan di antrean."""
-    global BERJALAN
+    """Ambil audio terus-menerus (16k mono), taruh tiap potongan di antrean.
+    Di Mac, CoreAudio kadang menolak 16 kHz → fallback 48k/44.1k lalu
+    di-resample ke 16k (np.interp, cukup untuk speech ASR)."""
+    global BERJALAN, SR_DEV
     try:
-        with lb.recorder(samplerate=HR) as rec:
+        try:
+            rec = lb.recorder(samplerate=HR)
+            SR_DEV = HR
+        except Exception:
+            for coba in (48000, 44100):
+                try:
+                    rec = lb.recorder(samplerate=coba)
+                    SR_DEV = coba
+                    break
+                except Exception:
+                    continue
+            else:
+                raise RuntimeError("device tak mau buka di 16k/48k/44.1k")
+        if SR_DEV != HR:
+            print(f"  (device {SR_DEV} Hz → di-resample ke {HR} Hz)", flush=True)
+        with rec:
             while BERJALAN:
-                data = rec.record(numframes=CHUNK)
-                # soundcard return shape (n, ch) float -1..1 → mono
+                data = rec.record(numframes=CHUNK if SR_DEV == HR else SR_DEV // 10)
                 if data.ndim == 2 and data.shape[1] > 1:
-                    data = data.mean(axis=1)
-                antre.put(np.asarray(data, dtype=np.float32).reshape(-1))
+                    data = data.mean(axis=1)   # soundcard float -1..1 → mono
+                data = np.asarray(data, dtype=np.float32).reshape(-1)
+                if SR_DEV != HR:
+                    n_baru = int(round(len(data) * HR / SR_DEV))
+                    x_lama = np.arange(len(data)) / SR_DEV
+                    x_baru = np.arange(n_baru) / HR
+                    data = np.interp(x_baru, x_lama, data).astype(np.float32)
+                antre.put(data)
     except Exception as e:
         print(f"\n{KUNING}  [ERROR rekam] {e} — capture berhenti.{KELUAR}", flush=True)
         BERJALAN = False
@@ -135,7 +199,7 @@ VAD_OPSI = None  # diisi di main (import lambat biar pesan error jelas)
 
 def main():
     parse = argparse.ArgumentParser(description="Caption live dari audio sistem (loopback) + Whisper")
-    parse.add_argument("--device", default=None, help="nama speaker (substring), mis. 'soundcore'")
+    parse.add_argument("--device", default=None, help="nama device (substring): Windows=speaker (mis. 'soundcore'), macOS=mic BlackHole/mic lain")
     parse.add_argument("--lang", default="id", help="kode bahasa Whisper (default id)")
     parse.add_argument("--model", default=WHISPER_SIZE_DEFAULT, help="ukuran Whisper (medium/small/large-v3)")
     parse.add_argument("--partial", action="store_true", help="tampilkan teks parsial saat orang bicara")
