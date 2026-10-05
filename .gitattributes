@@ -1,0 +1,5 @@
+# jaga line-ending antar OS: .command/.py wajib LF (Mac menolak CRLF di shebang)
+*.command text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
