@@ -32,7 +32,7 @@ import numpy as np
 # warning "data discontinuity" dari soundcard/Windows MediaFoundation itu
 # benign (transkrip tetap benar — terverifikasi saat uji); senyapkan biar
 # layar bersih untuk pengguna awam
-warnings.filterwarnings("ignore", module="soundcard")
+warnings.filterwarnings("ignore", message="data discontinuity")
 
 HR = 16000          # sample rate whisper
 CHUNK = 1600        # 0.1 s per potongan loopback
@@ -188,6 +188,9 @@ def thread_rekam(device, antre, sumber):
     Di Mac, CoreAudio kadang menolak 16 kHz → fallback 48k/44.1k lalu
     di-resample ke 16k (np.interp, cukup untuk speech ASR)."""
     global BERJALAN, SR_DEV
+    # Python 3.14: filter warnings top-level TIDAK didengar thread rekaman
+    # (filter jalan di thread utama, lolos di thread) → pasang ulang di sini
+    warnings.filterwarnings("ignore", message="data discontinuity")
     try:
         try:
             rec = device.recorder(samplerate=HR)
@@ -270,7 +273,7 @@ def main():
 
     # urutan: flag CLI > config.txt > default
     folder_log = args.folder_log or cfg.get("folder_log") or ""
-    lang = args.lang or cfg.get("lang") or "id"
+    lang = args.lang or cfg.get("lang") or "auto"   # default: biarkan Whisper menebak
     model_ukuran = args.model or cfg.get("model") or WHISPER_SIZE_DEFAULT
     if folder_log:
         os.makedirs(folder_log, exist_ok=True)

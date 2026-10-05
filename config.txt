@@ -16,12 +16,11 @@
 # Kalau folder belum ada, program otomatis membuatnya.
 
 # --- Bahasa percakapan --------------------------------------
-# id   = bahasa Indonesia (default, paling sering benar)
-# en   = bahasa Inggris
-# auto = biarkan program menebak tiap kalimat (sering salah kalau
-#        kalimatnya pendek; pakai hanya kalau memang terpaksa)
+# auto = deteksi otomatis tiap kalimat (DEFAULT)
+# id   = kunci bahasa Indonesia
+# en   = kunci bahasa Inggris
 #
-#   lang = id
+#   lang = auto
 
 # --- Ukuran model suara --------------------------------------
 # medium   = terbaik untuk umum (unduhan pertama ±1,5 GB)

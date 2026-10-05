@@ -299,13 +299,13 @@ Bahasanya diketik lewat `--lang` (contoh ada di tabel opsi di atas):
 
 | Rapat/call Anda | Yang dipakai | Alasan |
 |---|---|---|
-| Bahasa Indonesia | **tidak perlu apa-apa** (default = `id`) | Whisper sering salah menebak bahasa kalau ditanyakan tiap kalimat — jadi kami kunci Indonesia |
-| Bahasa Inggris | `--lang en` | kunci Inggris |
-| **Campuran Indonesia-English** ("gimana hasil benchmark-nya?") | tetap **default saja** (`id`) | kata Inggris yang diselingi tetap ditulis benar meski bahasa utama dikunci Indonesia — sudah dites; ini lebih akurat daripada `auto` |
-| Bahasa sungguhan sangat tidak pasti (beda-beda tiap orang) | `--lang auto` | Whisper menebak tiap kalimat. Untuk kalimat pendek tebakannya sering salah (pernah salah duga bahasa Indonesia jadi Tagalog) — pakai hanya kalau memang terpaksa |
+| Bahasa **campuran Indonesia-English** | **tidak perlu apa-apa** (default = `auto`, program menebak) | mode default; kalau menebak sering keliru di bahasa campur, kunci saja: `lang = id` di config.txt — kata Inggris diselingi tetap ditulis benar meski dikunci Indonesia |
+| Bahasa Indonesia penuh | `lang = id` (config.txt) atau `--lang id` | lebih akurat: Whisper sering salah menebak bahasa di kalimat pendek (pernah salah Indonesia → Tagalog) |
+| Bahasa Inggris | `--lang en` atau `lang = en` | kunci Inggris → pasti tidak salah duga |
 
-> Jadi jawaban singkatnya: **mix Indonesia-English tidak perlu opsi apa pun** —
-> default `id` sudah menangani istilah Inggris yang diselingi.
+> Jawaban singkatnya: **campuran Indonesia-English tidak perlu opsi apa pun**
+> — default `auto` sudah menangani. Kalau menebaknya sering keliru, kunci
+> bahasanya lewat `config.txt` (`lang = id` untuk rapat Indonesia penuh).
 
 ### Internet lambat?
 
