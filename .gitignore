@@ -7,5 +7,6 @@ live-captions_*.txt
 __pycache__/
 *.pyc
 
-# file uji
-uji-*.txt
+# file uji (skrip .py tetap dicatat — alat diagnosa)
+uji-*
+!uji-*.py
