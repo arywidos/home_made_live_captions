@@ -298,6 +298,9 @@ def main():
     sumber_suluh.append((lb, "lawan", HIJAU))
     if args.mic:
         sumber_suluh.append((cari_mic(args.mic_device), "saya", CYAN))
+        print(f"{KUNING}  ⚠ PERINGATAN: pakai HEADSET saat --mic!{KELUAR}", flush=True)
+        print(f"{KUNING}    Tanpa headset, mic ikut menangkap suara lawan yang keluar dari{KELUAR}", flush=True)
+        print(f"{KUNING}    speaker → percakapan lawan tercatat DOBEL (label lawan + saya).{KELUAR}", flush=True)
     transcribe = bikin_transcriber(model_ukuran, lang)
 
     nama_log = datetime.now().strftime("live-captions_%Y%m%d_%H%M%S.txt")

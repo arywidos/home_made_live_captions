@@ -306,13 +306,15 @@ C:\DATAS\voice-claude\.venv\Scripts\python.exe -X utf8 live-captions.py --mic
 ./jalankan-captions.command --mic --partial
 ```
 
-### ⚠️ Kenapa disarankan pakai headset saat `--mic`
+### ⚠️ HEADSET WAJIB saat `--mic` — kalau tidak, teks ganda (echo)
 
 Tanpa headset, mic laptop ikut menangkap **suara lawan yang keluar dari
 speaker** — akibatnya percakapan lawan tercatat dobel: sekali berlabel
 `(lawan)`, sekali lagi berlabel `(saya)`. Ini kami buktikan sendiri saat
-pengujian (mic laptop menangkap siaran uji terang-terang). Dengan headset — earphone kabel maupun Bluetooth — suara
-lawan tidak bocor ke mic, jadi label tetap bersih.
+pengujian (mic laptop menangkap siaran uji terang-terang). Dengan headset —
+earphone kabel maupun Bluetooth — suara lawan tidak bocor ke mic, jadi
+label tetap bersih. Program sendiri menampilkan peringatan ini di layar
+setiap kali `--mic` dinyalakan.
 
 ---
 
