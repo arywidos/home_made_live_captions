@@ -1,6 +1,6 @@
 # hasil program — jangan diunggah
 live-captions_*.txt
-uji-run.log
+*.log
 
 # lingkungan Python
 .venv/
