@@ -267,6 +267,45 @@ Hasilnya otomatis berlabel biar tahu siapa bicara:
   (ganti sesuai nama mic yang muncul ketika mic tidak tampil di info program)
 - pakai `--mic` tanpa argumen = mic default komputer
 
+> **Ini bukan program terpisah** — mic hanya bendera (`--mic`) tambahan pada
+> `live-captions.py`. Begitu ditambahkan, dua perekam jalan paralel:
+> loopback (lawan) dan mic (saya).
+
+### Menjalankan lewat tombol launcher
+
+Bendera bisa ditempel di belakang file launcher (launcher meneruskan
+semua argumen ke program):
+
+```
+Windows : jalankan-captions.bat --mic
+Mac     : ./jalankan-captions.command --mic
+```
+
+Gabungan yang biasa: `... --mic --partial` (teks bergerak saat masih bicara),
+atau `... --mic --lang en` untuk rapat Inggris.
+
+### Contoh perintah lengkap dengan mic (tinggal salin)
+
+**Windows** (PowerShell dari folder `C:\DATAS\live-captions`):
+
+```
+# venv sendiri (hasil langkah instalasi README lama):
+.venv\Scripts\python.exe -X utf8 live-captions.py --mic
+
+# tanpa venv, dipinjam dari voice-claude (pc dev):
+C:\DATAS\voice-claude\.venv\Scripts\python.exe -X utf8 live-captions.py --mic
+
+# dengan teks parsial + pilih mic tertentu:
+.venv\Scripts\python.exe -X utf8 live-captions.py --mic --partial --mic-device "Headset"
+```
+
+**Mac** (Terminal dari folder repo):
+
+```
+.venv/bin/python3 -X utf8 live-captions.py --mic
+./jalankan-captions.command --mic --partial
+```
+
 ### ⚠️ Kenapa disarankan pakai headset saat `--mic`
 
 Tanpa headset, mic laptop ikut menangkap **suara lawan yang keluar dari
