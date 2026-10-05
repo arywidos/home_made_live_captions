@@ -319,6 +319,22 @@ Ini disarankan juga kalau komputer **tanpa kartu grafis NVIDIA** (Windows)
 atau Mac lama — di CPU, model `medium` lebih lambat dari `small`.
 Di MacBook M1/M2 ke atas, `medium` biasanya masih nyaman.
 
+### Mengubah lokasi penyimpanan catatan (config.txt)
+
+Setiap mulai, program membuat file log baru. Mau disimpan ke tempat lain
+(mis. folder Documents)? Edit file **`config.txt`** di dalam folder program
+(buka dengan Notepad / TextEdit):
+
+1. Cari baris yang ditulis `#   folder_log = C:\Users\NamaAnda\Documents\catatan-rapat`
+2. **Hapus tanda `#` dan `spasi` di depannya** (itu yang berarti "sudah aktif")
+3. Ganti dengan folder yang Anda mau, lalu simpan file
+4. Jalankan ulang program — di info awal akan muncul
+   `setelan diterapkan: {'folder_log': ...}` sebagai konfirmasi
+
+Folder yang belum ada akan dibuat otomatis. Di file yang sama juga bisa
+disimpan **bahasa** (`lang = en`) dan **ukuran model** (`model = small`)
+supaya tak perlu diketik tiap mulai.
+
 ---
 
 ## Solusi masalah umum

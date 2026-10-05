@@ -1,0 +1,2 @@
+folder_log = C:/DATAS/live-captions/uji-log-dir
+lang = en

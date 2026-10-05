@@ -227,13 +227,39 @@ def thread_rekam(device, antre, sumber):
 VAD_OPSI = None  # diisi di main (import lambat biar pesan error jelas)
 
 
+# ---------------------------------------------------------------- config ---
+def baca_config():
+    """Baca file config.txt di folder program (yang diedit user dengan Notepad).
+    Isi baris format:  kunci = nilai   (baris # awal dianggap komentar).
+    Kunci yang dikenal: folder_log, lang, model."""
+    jalur = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.txt")
+    setelan = {}
+    try:
+        if os.path.isfile(jalur):
+            with open(jalur, encoding="utf-8") as f:
+                for baris in f:
+                    baris = baris.split("#", 1)[0].strip()   # buang komentar
+                    if not baris or "=" not in baris:
+                        continue
+                    kunci, nilai = baris.split("=", 1)
+                    setelan[kunci.strip().lower()] = nilai.strip()
+    except Exception as e:
+        print(f"  (config.txt tidak terbaca: {e} — dipakai default)", flush=True)
+    return setelan
+
+
 def main():
+    cfg = baca_config()
+
     parse = argparse.ArgumentParser(description="Caption live dari audio sistem (loopback) + Whisper")
     parse.add_argument("--device", default=None, help="nama device (substring): Windows=speaker (mis. 'soundcore'), macOS=mic BlackHole/mic lain")
-    parse.add_argument("--lang", default="id",
+    parse.add_argument("--lang", default=None,
                        help="kode bahasa Whisper (default id; 'en' utk Inggris; "
                             "'auto' = tebak tiap kalimat, sering salah utk klip pendek)")
-    parse.add_argument("--model", default=WHISPER_SIZE_DEFAULT, help="ukuran Whisper (medium/small/large-v3)")
+    parse.add_argument("--model", default=None, help="ukuran Whisper (medium/small/large-v3)")
+    parse.add_argument("--folder-log", default=None,
+                       help="folder penyimpanan file log; default: dari config.txt (folder_log=) "
+                            "atau folder program ini")
     parse.add_argument("--partial", action="store_true", help="tampilkan teks parsial saat orang bicara")
     parse.add_argument("--durasi", type=float, default=0, help="detik sampai berhenti sendiri (0 = terus)")
     parse.add_argument("--mic", action="store_true",
@@ -241,6 +267,17 @@ def main():
                             "Pakai headset supaya suara lawan dari speaker tidak terdeteksi dobel!")
     parse.add_argument("--mic-device", default=None, help="nama mic (substring) kalau bukan mic default")
     args = parse.parse_args()
+
+    # urutan: flag CLI > config.txt > default
+    folder_log = args.folder_log or cfg.get("folder_log") or ""
+    lang = args.lang or cfg.get("lang") or "id"
+    model_ukuran = args.model or cfg.get("model") or WHISPER_SIZE_DEFAULT
+    if folder_log:
+        os.makedirs(folder_log, exist_ok=True)
+    dari_config = {k: v for k, v in (("folder_log", folder_log), ("lang", lang), ("model", model_ukuran))
+                   if k in cfg or (k == "folder_log" and folder_log)}
+    if dari_config:
+        print(f"  setelan diterapkan: {dari_config}", flush=True)
 
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     global VAD_OPSI, BERJALAN
@@ -258,9 +295,14 @@ def main():
     sumber_suluh.append((lb, "lawan", HIJAU))
     if args.mic:
         sumber_suluh.append((cari_mic(args.mic_device), "saya", CYAN))
-    transcribe = bikin_transcriber(args.model, args.lang)
+    transcribe = bikin_transcriber(model_ukuran, lang)
 
     nama_log = datetime.now().strftime("live-captions_%Y%m%d_%H%M%S.txt")
+    if folder_log:
+        nama_log = os.path.join(folder_log, nama_log)
+    else:
+        # default: folder tempat live-captions.py berada (bukan cwd utk aman)
+        nama_log = os.path.join(os.path.dirname(os.path.abspath(__file__)), nama_log)
     path_log = os.path.abspath(nama_log)
     print("")
     print("  " + "=" * 66)

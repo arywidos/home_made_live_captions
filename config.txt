@@ -1,0 +1,31 @@
+# =============================================================
+#  PENGATURAN live-captions — diedit dengan Notepad / TextEdit
+#  Cara pakai: hapus tanda "#" di awal baris yang mau diubah,
+#  lalu simpan file ini. Program harus dijalankan ulang setelah diedit.
+#
+#  Nilai yang diisi di bawah bisa ditali sekali-jalan lewat perintah:
+#    --folder-log, --lang, --model   (yang di perintah lebih diutamakan)
+# =============================================================
+
+# --- Folder penyimpanan catatan percakapan (log) -------------
+# Kosongkan (tanda # tetap di depan) = disimpan di folder program ini.
+# Contoh mengaktifkan folder lain (hapus # di awal dan isi nama folder):
+#
+#   folder_log = C:\Users\NamaAnda\Documents\catatan-rapat
+#
+# Kalau folder belum ada, program otomatis membuatnya.
+
+# --- Bahasa percakapan --------------------------------------
+# id   = bahasa Indonesia (default, paling sering benar)
+# en   = bahasa Inggris
+# auto = biarkan program menebak tiap kalimat (sering salah kalau
+#        kalimatnya pendek; pakai hanya kalau memang terpaksa)
+#
+#   lang = id
+
+# --- Ukuran model suara --------------------------------------
+# medium   = terbaik untuk umum (unduhan pertama ±1,5 GB)
+# small    = lebih cepat, cocok tanpa kartu grafis NVIDIA / Mac lama
+# large-v3 = paling teliti, butuh komputer kuat
+#
+#   model = medium
