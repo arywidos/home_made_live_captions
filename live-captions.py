@@ -97,7 +97,8 @@ def bikin_transcriber(ukuran, bahasa):
         # loopback dari soundcard sudah float -1..1; pastikan 1D mono
         # (2D memicu error mkl_malloc yang menyesatkan — pelajaran voice-claude)
         audio = np.asarray(audio, dtype=np.float32).reshape(-1)
-        segs, info = model.transcribe(audio, beam_size=1, **kw)
+        segs, info = model.transcribe(
+            audio, beam_size=1, condition_on_previous_text=False, **kw)
         return " ".join(s.text for s in segs).strip()
 
     return transcribe
@@ -346,6 +347,20 @@ def main():
         print(f"{KUNING}  ⚠ PERINGATAN: pakai HEADSET saat --mic!{KELUAR}", flush=True)
         print(f"{KUNING}    Tanpa headset, mic ikut menangkap suara lawan yang keluar dari{KELUAR}", flush=True)
         print(f"{KUNING}    speaker → percakapan lawan tercatat DOBEL (label lawan + saya).{KELUAR}", flush=True)
+        try:
+            import soundcard as sc
+            keluar = sc.default_speaker().name
+        except Exception:
+            keluar = ""
+        # mode rawan echo: output bukan perangkat headset/TWS — suara rapat
+        # keluar dari speaker laptop sambil mic laptop ikut mendengar
+        kata_ear = ("bluetooth", "headset", "headphone", "airpod", "soundcore",
+                    "freebuds", "buds", "earbuds", "jbl")
+        if keluar and not any(k in keluar.lower() for k in kata_ear):
+            print(f"{KUNING}  ⚠ OUTPUT Windows masih ke '{keluar}' (bukan headset).{KELUAR}", flush=True)
+            print(f"{KUNING}    Selama begitu, suara dari komputer akan ikut ditangkap mic{KELUAR}", flush=True)
+            print(f"{KUNING}    → baris (saya) kembaran. Pindahkan Output ke headset:{KELUAR}", flush=True)
+            print(f"{KUNING}    Win+A → panah di samping volume → pilih headset.{KELUAR}", flush=True)
     transcribe = bikin_transcriber(model_ukuran, lang)
 
     nama_log = datetime.now().strftime("live-captions_%Y%m%d_%H%M%S.txt")
@@ -371,7 +386,8 @@ def main():
         threading.Thread(target=thread_rekam, args=(dev, antre, label), daemon=True).start()
 
     # keadaan per sumber: buffer audio + penghitung sampel baru + tick parsial
-    state = {label: {"audio": np.zeros(0, dtype=np.float32), "baru": 0, "tick": 0.0}
+    state = {label: {"audio": np.zeros(0, dtype=np.float32), "baru": 0, "tick": 0.0,
+                     "parsial": ""}
              for _dev, label, _w in sumber_suluh}
     dua_sumber = len(sumber_suluh) > 1     # label (lawan)/(saya) hanya saat --mic
     f_log = open(nama_log, "a", encoding="utf-8")
@@ -410,9 +426,20 @@ def main():
                 uji = audio[mulai:min(akhir, len(audio))]
                 st["tick"] = panjang
                 teks = transcribe(uji)
-                if teks:
-                    etiket = f"{label}) " if dua_sumber else ""
-                    sys.stdout.write(f"\r{warna}[...]  ({etiket}{teks}{KELUAR}   ")
+                # redraw HANYA bila teks benar-benar berubah — tanpa ini
+                # pengguna melihat teks sama tertulis ulang tiap 0,5 dtk
+                if teks and teks != st.get("parsial"):
+                    st["parsial"] = teks
+                    try:
+                        lebar = os.get_terminal_size().columns
+                    except Exception:
+                        lebar = 80
+                    # tampilkan ekor teks saja yang muat SATU baris: teks yang
+                    # melewati lebar layar membungkus → redraw \r tak lagi
+                    # menimpa — baris-baris kembar menumpuk (bug layar penuh)
+                    potong = teks[-(max(20, lebar - 14)):]
+                    etiket = f"({label}) " if dua_sumber else ""
+                    sys.stdout.write(f"\r{warna}[...]  {etiket}{potong}{KELUAR}\033[K")
                     sys.stdout.flush()
             # segmen terlalu panjang → potong paksa biar caption keluar
             if panjang >= PANJANG_MAKS:

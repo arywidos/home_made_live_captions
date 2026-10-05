@@ -1,0 +1,18 @@
+perbaikan layar & kestabilan caption
+
+- partial mode: redraw hanya bila teks berubah; tampilkan ekor teks
+  yang muat satu baris +hapus sisa dgn ANSI \033[K — teks parsial yang
+  melewati lebar layar membungkus dan timpa gagal, baris kembar
+  menumpuk (tertangkap di screenshot aneh.png). Label (saya) tak lagi
+  meninggalkan tanda kurung liar di mode non-mic.
+- transcribe: condition_on_previous_text=False — menghentikan loop
+  kalimat berulang (di sisi kacau atau di sisi kacau).
+- peringatan echo otomatis: --mic + output Windows masih speaker
+  laptop → beri tahu pengguna di awal sesi (kondisi BT bawaan laptop
+  bikin baris (saya) kembaran).
+- caption-en.bat & caption-auto.bat: diulis-ulang tanpa BOM (Set-Content
+  PS 5.1 menulis UTF8+BOM; cmd tersandung BOM → tampilan kacau).
+- config: model = large-v3-turbo utk semua launcher (lebih akurat dari
+  medium di RTX 3050, muat 4GB — sesuai uji README).
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>

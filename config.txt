@@ -27,5 +27,6 @@ lang = id
 # medium   = terbaik untuk umum (unduhan pertama ±1,5 GB)
 # small    = lebih cepat, cocok tanpa kartu grafis NVIDIA / Mac lama
 # large-v3 = paling teliti, butuh komputer kuat
-#
-#   model = medium
+# (model = large-v3-turbo aktif di bawah — sesuai rekomendasi README:
+#  lebih akurat dari medium dan tetap muat di RTX 3050 4GB, uji 2026-10-05)
+model = large-v3-turbo

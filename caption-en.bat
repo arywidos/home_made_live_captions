@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 rem caption-en.bat — caption suara SPEAKER, bahasa Inggris
 rem  (tanpa mic: percakapan lawan / video, tidak ada label (saya))
 cd /d "%~dp0"
