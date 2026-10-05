@@ -38,11 +38,11 @@ PANJANG_MIN = int(HR * 0.4)   # bicara < 0.4 s diabaikan
 try:
     import colorama
     colorama.just_fix_windows_console()
-    HIJAU, KUNING, KELUAR = "\033[92m", "\033[93m", "\033[0m"
+    HIJAU, KUNING, CYAN, KELUAR = "\033[92m", "\033[93m", "\033[96m", "\033[0m"
     # konsol Windows lama tetap aman
     pass
 except Exception:
-    HIJAU = KUNING = KELUAR = ""
+    HIJAU = KUNING = CYAN = KELUAR = ""
     colorama = None
 
 # ------------------------------------------------------------- whisper -----
@@ -155,19 +155,40 @@ def cari_loopback(nama=None):
     return lb
 
 
-def thread_rekam(lb, antre):
-    """Ambil audio terus-menerus (16k mono), taruh tiap potongan di antrean.
+def cari_mic(nama=None):
+    """Mic sungguhan (bukan loopback) untuk opsi --mic: merekam suara pemakai
+    sendiri saat bicara di meeting, diberi label (saya)."""
+    import soundcard as sc
+    kandidat = sc.all_microphones(include_loopback=False)
+    pilih = None
+    if nama:
+        for m in kandidat:
+            if nama.lower() in m.name.lower():
+                pilih = m
+                break
+        if pilih is None:
+            sys.exit(f"  mic dengan nama '{nama}' tidak ditemukan. "
+                     f"Yang ada: {[m.name for m in kandidat[:12]]}")
+    else:
+        pilih = sc.default_microphone()
+    print(f"  mic: {pilih.name} (label: saya)", flush=True)
+    return pilih
+
+
+def thread_rekam(device, antre, sumber):
+    """Ambil audio terus-menerus (16k mono), taruh tiap potongan di antrean
+    berlabel sumber ('lawan' utk loopback / 'saya' utk mic).
     Di Mac, CoreAudio kadang menolak 16 kHz → fallback 48k/44.1k lalu
     di-resample ke 16k (np.interp, cukup untuk speech ASR)."""
     global BERJALAN, SR_DEV
     try:
         try:
-            rec = lb.recorder(samplerate=HR)
+            rec = device.recorder(samplerate=HR)
             SR_DEV = HR
         except Exception:
             for coba in (48000, 44100):
                 try:
-                    rec = lb.recorder(samplerate=coba)
+                    rec = device.recorder(samplerate=coba)
                     SR_DEV = coba
                     break
                 except Exception:
@@ -187,9 +208,11 @@ def thread_rekam(lb, antre):
                     x_lama = np.arange(len(data)) / SR_DEV
                     x_baru = np.arange(n_baru) / HR
                     data = np.interp(x_baru, x_lama, data).astype(np.float32)
-                antre.put(data)
+                antre.put((sumber, data))
     except Exception as e:
-        print(f"\n{KUNING}  [ERROR rekam] {e} — capture berhenti.{KELUAR}", flush=True)
+        import traceback
+        print(f"\n{KUNING}  [ERROR rekam ({sumber})] {e}{KELUAR}", flush=True)
+        traceback.print_exc()
         BERJALAN = False
 
 
@@ -204,6 +227,10 @@ def main():
     parse.add_argument("--model", default=WHISPER_SIZE_DEFAULT, help="ukuran Whisper (medium/small/large-v3)")
     parse.add_argument("--partial", action="store_true", help="tampilkan teks parsial saat orang bicara")
     parse.add_argument("--durasi", type=float, default=0, help="detik sampai berhenti sendiri (0 = terus)")
+    parse.add_argument("--mic", action="store_true",
+                       help="juga rekam mic → suara pemakai tercaption berlabel (saya). "
+                            "Pakai headset supaya suara lawan dari speaker tidak terdeteksi dobel!")
+    parse.add_argument("--mic-device", default=None, help="nama mic (substring) kalau bukan mic default")
     args = parse.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -217,7 +244,11 @@ def main():
         sys.exit(f"  faster-whisper tidak ditemukan: {e}")
 
     print(__doc__ or "")
+    sumber_suluh = []   # (device, label, warna)
     lb = cari_loopback(args.device)
+    sumber_suluh.append((lb, "lawan", HIJAU))
+    if args.mic:
+        sumber_suluh.append((cari_mic(args.mic_device), "saya", CYAN))
     transcribe = bikin_transcriber(args.model, args.lang)
 
     nama_log = datetime.now().strftime("live-captions_%Y%m%d_%H%M%S.txt")
@@ -226,17 +257,74 @@ def main():
     import queue
     antre = queue.Queue()
     BERJALAN = True
-    th = threading.Thread(target=thread_rekam, args=(lb, antre), daemon=True)
-    th.start()
+    for dev, label, _warna in sumber_suluh:
+        threading.Thread(target=thread_rekam, args=(dev, antre, label), daemon=True).start()
 
-    audio = np.zeros(0, dtype=np.float32)   # buffer utuh
-    baru = 0                                 # sampel baru sejak VAD terakhir
-    tick_parsial = 0.0
+    # keadaan per sumber: buffer audio + penghitung sampel baru + tick parsial
+    state = {label: {"audio": np.zeros(0, dtype=np.float32), "baru": 0, "tick": 0.0}
+             for _dev, label, _w in sumber_suluh}
+    dua_sumber = len(sumber_suluh) > 1     # label (lawan)/(saya) hanya saat --mic
     f_log = open(nama_log, "a", encoding="utf-8")
 
     def segmen_baru(ts):
         """Daftar speech timestamps dari pustaka, terjemah ke interval (a, b)."""
         return [(int(s["start"]), int(s["end"])) for s in ts]
+
+    def proses_sumber(label, warna):
+        """VAD + transkripsi untuk buffer satu sumber. Dipanggil per tick."""
+        st = state[label]
+        audio = st["audio"]
+        if st["baru"] < CHUNK:
+            return
+        st["baru"] = 0
+
+        ts = get_speech_timestamps(audio, VAD_OPSI, sampling_rate=HR)
+        segs = segmen_baru(ts)
+        if not segs:
+            # tak ada bicara sama sekali → buang buffer (hening) biar hemat
+            if len(audio) > HR * 3:
+                st["audio"] = audio[len(audio) - HR * 1:]
+            return
+
+        mulai, akhir = segs[0]   # cek segmen yang sedang berlangsung
+        # segmen "selesai" = ekornya hening TAIL_NDAGU sampel, atau sudah mentok panjang maks
+        masih_bicara = akhir >= len(audio) - TAIL_NDAGU
+        panjang = min(akhir, len(audio)) - mulai
+
+        if masih_bicara:
+            if args.partial and panjang > PANJANG_MIN and panjang - st["tick"] > HR // 2:
+                uji = audio[mulai:min(akhir, len(audio))]
+                st["tick"] = panjang
+                teks = transcribe(uji)
+                if teks:
+                    etiket = f"{label}) " if dua_sumber else ""
+                    sys.stdout.write(f"\r{warna}[...]  ({etiket}{teks}{KELUAR}   ")
+                    sys.stdout.flush()
+            # segmen terlalu panjang → potong paksa biar caption keluar
+            if panjang >= PANJANG_MAKS:
+                masih_bicara = False
+                akhir = mulai + PANJANG_MAKS
+        if masih_bicara:
+            return
+
+        if panjang < PANJANG_MIN:
+            uji = None
+        else:
+            uji = audio[mulai:min(akhir, len(audio))]
+            teks = transcribe(uji).strip()
+            jam = datetime.now().strftime("%H:%M:%S")
+            if teks:
+                sys.stdout.write("\r" + " " * 120 + "\r")   # bersihkan baris parsial
+                etiket = f"({label}) " if dua_sumber else ""
+                print(f"[{jam}] {warna}{etiket}{teks}{KELUAR}", flush=True)
+                f_log.write(f"[{jam}] {etiket}{teks}\n")
+                f_log.flush()
+
+        # buang semua audio sampai akhir segmen: kalau sisakan "konteks"
+        # yang memuat ekor bicara, VAD mendeteksi ulang segmen sama tiap
+        # tick → teks kembar (bug dedup yang sudah diperbaiki)
+        st["audio"] = audio[min(akhir, len(audio)):]
+        st["tick"] = 0.0
 
     t_mulai = time.time()
     try:
@@ -245,63 +333,15 @@ def main():
             if args.durasi and time.time() - t_mulai > args.durasi:
                 break
             time.sleep(0.15)
-            # masukkan tiap potongan dari antrean ke buffer
-            potongan = []
+            # masukkan tiap potongan dari antrean ke buffer sumbernya
             while not antre.empty():
-                potongan.append(antre.get())
-            if potongan:
-                audio = np.concatenate([audio] + potongan) if len(audio) else np.concatenate(potongan)
-                baru += sum(len(p) for p in potongan)
+                sumber, data = antre.get()
+                st = state[sumber]
+                st["audio"] = np.concatenate([st["audio"], data]) if len(st["audio"]) else data
+                st["baru"] += len(data)
 
-            if baru < CHUNK:
-                continue
-            baru = 0
-
-            ts = get_speech_timestamps(audio, VAD_OPSI, sampling_rate=HR)
-            segs = segmen_baru(ts)
-            if not segs:
-                # tak ada bicara sama sekali → buang buffer (hening) biar hemat
-                if len(audio) > HR * 3:
-                    audio = audio[len(audio) - HR * 1:]
-                continue
-
-            mulai, akhir = segs[0]   # cek segmen yang sedang berlangsung
-            # segmen "selesai" = ekornya hening TAIL_NDAGU sampel, atau sudah mentok panjang maks
-            masih_bicara = akhir >= len(audio) - TAIL_NDAGU
-            panjang = min(akhir, len(audio)) - mulai
-
-            if masih_bicara:
-                if args.partial and panjang > PANJANG_MIN and panjang - tick_parsial > HR // 2:
-                    uji = audio[mulai:min(akhir, len(audio))]
-                    tick_parsial = panjang
-                    teks = transcribe(uji)
-                    if teks:
-                        sys.stdout.write(f"\r{HIJAU}[...]  {teks}{KELUAR}   ")
-                        sys.stdout.flush()
-                # segmen terlalu panjang → potong paksa biar caption keluar
-                if panjang >= PANJANG_MAKS:
-                    masih_bicara = False
-                    akhir = mulai + PANJANG_MAKS
-            if masih_bicara:
-                continue
-
-            if panjang < PANJANG_MIN:
-                uji = None
-            else:
-                uji = audio[mulai:min(akhir, len(audio))]
-                teks = transcribe(uji).strip()
-                jam = datetime.now().strftime("%H:%M:%S")
-                if teks:
-                    sys.stdout.write("\r" + " " * 120 + "\r")   # bersihkan baris parsial
-                    print(f"[{jam}] {HIJAU}{teks}{KELUAR}", flush=True)
-                    f_log.write(f"[{jam}] {teks}\n")
-                    f_log.flush()
-
-            # buang semua audio sampai akhir segmen: kalau sisakan "konteks"
-            # yang memuat ekor bicara, VAD mendeteksi ulang segmen sama tiap
-            # tick → teks kembar (bug dedup yang sudah diperbaiki)
-            audio = audio[min(akhir, len(audio)):]
-            tick_parsial = 0.0
+            for _dev, label, warna in sumber_suluh:
+                proses_sumber(label, warna)
     except KeyboardInterrupt:
         pass
     finally:

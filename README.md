@@ -221,6 +221,8 @@ Untuk **keluar**: `Ctrl+C` di Terminal.
 
 > **Mic Anda sendiri TIDAK direkam** — hanya suara yang keluar dari speaker
 > (suara lawan bicara). Itu biasanya justru diinginkan demi privasi.
+> Kalau suara Anda sendiri juga ingin jadi caption: tambah `--mic`
+> (lihat tabel opsi di bawah).
 
 ---
 
@@ -234,6 +236,8 @@ Mac — ketik di Terminal dari folder repo, dengan pengganti
 |---|---|
 | Meeting bahasa Inggris | ... `--lang en` |
 | Teks muncul *meski bicara masih berlangsung* | tambah `--partial` |
+| **Suara saya sendiri juga jadi caption** | tambah `--mic`. Hasil jadi berlabel: hijau `(lawan)`, biru `(saya)` — contoh `[10:23:41] (saya) oke saya kirim malam ini`. **Pakai headset!** tanpa headset, mic ikut menangkap suara lawan dari speaker → baris lawan dobel |
+| Mic yang dipakai bukan mic default (Windows/`--mic`) | tambah `--mic-device` nama mic, mis. `--mic-device "Headset"` |
 | Windows: suara lewat **headset Bluetooth** | `--device soundcore` (ganti sesuai nama headset — contoh: `--device Sony`, `--device JBL`) |
 | Mac: pilih input selain BlackHole | `--device BlackHole` (default) atau nama mic lain |
 | Cuma pilih 1 file mp3 utk uji tanpa call | ... `uji-playback.py namamp3.mp3` |
