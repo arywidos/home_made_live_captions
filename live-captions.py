@@ -261,7 +261,15 @@ def main():
     transcribe = bikin_transcriber(args.model, args.lang)
 
     nama_log = datetime.now().strftime("live-captions_%Y%m%d_%H%M%S.txt")
-    print(f"  log: {nama_log} | Ctrl+C untuk keluar\n", flush=True)
+    path_log = os.path.abspath(nama_log)
+    print("")
+    print("  " + "=" * 66)
+    print("  CATATAN PERCAKAPAN AKAN TERSIMPAN DI FILE INI:")
+    print(f"    {path_log}")
+    print("  (terisi otomatis selama program jalan — dibuka pakai Notepad)")
+    print("  Untuk berhenti program: tekan Ctrl+C di jendela ini")
+    print("  " + "=" * 66)
+    print("", flush=True)
 
     import queue
     antre = queue.Queue()
@@ -359,7 +367,7 @@ def main():
             f_log.close()
         except Exception:
             pass
-        print(f"\n  selesai. log: {nama_log}")
+        print(f"\n  Selesai. Catatan percakapan lengkap tersimpan di:\n    {path_log}\n  (buka pakai Notepad: klik kanan file → open with → Notepad)")
 
 
 if __name__ == "__main__":
