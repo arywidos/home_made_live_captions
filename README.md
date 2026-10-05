@@ -293,6 +293,20 @@ Mac — ketik di Terminal dari folder repo, dengan pengganti
 | Mac: pilih input selain BlackHole | `--device BlackHole` (default) atau nama mic lain |
 | Cuma pilih 1 file mp3 utk uji tanpa call | ... `uji-playback.py namamp3.mp3` |
 
+### Bahasa Indonesia, Inggris, atau campuran?
+
+Bahasanya diketik lewat `--lang` (contoh ada di tabel opsi di atas):
+
+| Rapat/call Anda | Yang dipakai | Alasan |
+|---|---|---|
+| Bahasa Indonesia | **tidak perlu apa-apa** (default = `id`) | Whisper sering salah menebak bahasa kalau ditanyakan tiap kalimat — jadi kami kunci Indonesia |
+| Bahasa Inggris | `--lang en` | kunci Inggris |
+| **Campuran Indonesia-English** ("gimana hasil benchmark-nya?") | tetap **default saja** (`id`) | kata Inggris yang diselingi tetap ditulis benar meski bahasa utama dikunci Indonesia — sudah dites; ini lebih akurat daripada `auto` |
+| Bahasa sungguhan sangat tidak pasti (beda-beda tiap orang) | `--lang auto` | Whisper menebak tiap kalimat. Untuk kalimat pendek tebakannya sering salah (pernah salah duga bahasa Indonesia jadi Tagalog) — pakai hanya kalau memang terpaksa |
+
+> Jadi jawaban singkatnya: **mix Indonesia-English tidak perlu opsi apa pun** —
+> default `id` sudah menangani istilah Inggris yang diselingi.
+
 ### Internet lambat?
 
 Ganti model yang kecil (unduh hanya ~480 MB):

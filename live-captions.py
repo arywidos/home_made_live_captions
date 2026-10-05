@@ -68,6 +68,7 @@ def _daftarkan_dll_cuda():
 def bikin_transcriber(ukuran, bahasa):
     _daftarkan_dll_cuda()
     from faster_whisper import WhisperModel
+    kw = {} if bahasa == "auto" else {"language": bahasa}
 
     model = None
     dev_aktif = None
@@ -90,7 +91,7 @@ def bikin_transcriber(ukuran, bahasa):
         # loopback dari soundcard sudah float -1..1; pastikan 1D mono
         # (2D memicu error mkl_malloc yang menyesatkan — pelajaran voice-claude)
         audio = np.asarray(audio, dtype=np.float32).reshape(-1)
-        segs, info = model.transcribe(audio, beam_size=1, language=bahasa)
+        segs, info = model.transcribe(audio, beam_size=1, **kw)
         return " ".join(s.text for s in segs).strip()
 
     return transcribe
@@ -223,7 +224,9 @@ VAD_OPSI = None  # diisi di main (import lambat biar pesan error jelas)
 def main():
     parse = argparse.ArgumentParser(description="Caption live dari audio sistem (loopback) + Whisper")
     parse.add_argument("--device", default=None, help="nama device (substring): Windows=speaker (mis. 'soundcore'), macOS=mic BlackHole/mic lain")
-    parse.add_argument("--lang", default="id", help="kode bahasa Whisper (default id)")
+    parse.add_argument("--lang", default="id",
+                       help="kode bahasa Whisper (default id; 'en' utk Inggris; "
+                            "'auto' = tebak tiap kalimat, sering salah utk klip pendek)")
     parse.add_argument("--model", default=WHISPER_SIZE_DEFAULT, help="ukuran Whisper (medium/small/large-v3)")
     parse.add_argument("--partial", action="store_true", help="tampilkan teks parsial saat orang bicara")
     parse.add_argument("--durasi", type=float, default=0, help="detik sampai berhenti sendiri (0 = terus)")
