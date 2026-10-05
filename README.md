@@ -226,6 +226,40 @@ Untuk **keluar**: `Ctrl+C` di Terminal.
 
 ---
 
+## Suara Anda sendiri juga jadi caption (opsi `--mic`)
+
+Secara default program hanya menangkap **suara yang keluar dari speaker**
+(tersirat: suara lawan bicara). Kalau Anda ingin *apa yang Anda ucapkan juga*
+tampil jadi teks — untuk jadwal hasil rapat, catatan, atau aksesibilitas —
+
+```
+Windows : .venv\Scripts\python.exe -X utf8 live-captions.py --mic
+Mac     : .venv/bin/python3 -X utf8 live-captions.py --mic
+```
+
+Hasilnya otomatis berlabel biar tahu siapa bicara:
+
+```
+[10:23:41] (lawan) jadi besok kita review design-nya ya
+[10:24:02] (saya)  oke, saya kirim draft malam ini
+[10:24:15] (lawan) siap, terima kasih
+```
+
+- hijau `(lawan)` = suara keluar dari speaker  ·  biru `(saya)` = suara dari mic Anda
+- mic mana yang dipakai bisa diganti: tambah `--mic-device "Headset"`
+  (ganti sesuai nama mic yang muncul ketika mic tidak tampil di info program)
+- pakai `--mic` tanpa argumen = mic default komputer
+
+### ⚠️ Kenapa disarankan pakai headset saat `--mic`
+
+Tanpa headset, mic laptop ikut menangkap **suara lawan yang keluar dari
+speaker** — akibatnya percakapan lawan tercatat dobel: sekali berlabel
+`(lawan)`, sekali lagi berlabel `(saya)`. Ini kami buktikan sendiri saat
+pengujian (mic laptop menangkap siaran uji terang-terang). Dengan headset — earphone kabel maupun Bluetooth — suara
+lawan tidak bocor ke mic, jadi label tetap bersih.
+
+---
+
 ## Opsi yang sering dipakai
 
 Windows — ketik di PowerShell dari folder `C:\DATAS\live-captions`;
@@ -260,6 +294,8 @@ Di MacBook M1/M2 ke atas, `medium` biasanya masih nyaman.
 
 | Masalah | Solusi |
 |---|---|
+| Baris `(saya)` tidak pernah muncul (meski `--mic`) | Cek mic tidak tumpang/mute di Windows (tombol +volume) atau di call Zoom/WhatsApp. Cek juga **Settings → Privacy → Microphone → allow desktop apps**. Mic lain? tambahkan `--mic-device` nama mic |
+| Percakapan lawan tercatat dobel (juga berlabel `(saya)`) | Mic menangkap suara speaker — pakai headset, atau jangan pakai `--mic` |
 | "python tidak dikenal" (Windows) | Ulang langkah 1; centang "Add Python to PATH" |
 | Teks tidak muncul | Pastikan call/video **berbunyi lewat device yang sama** dengan `loopback:`/`input:` di info program. Headset BT di Windows? tambahkan `--device` nama headset. Mac: pastikan Multi-Output Device aktif |
 | Mac: "device 'BlackHole' tidak ketemu" | Pasang BlackHole (bagian macOS langkah 2) — kalau sudah pasang, keluar-masuk atau restart agar device terbaca |
