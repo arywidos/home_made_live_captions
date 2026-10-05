@@ -5,4 +5,4 @@ live-captions_*.txt
 # lingkungan Python
 .venv/
 __pycache__/
-*.pyc
+*.pycuji-*.txt
