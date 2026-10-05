@@ -21,6 +21,7 @@
 # en   = kunci bahasa Inggris
 #
 #   lang = auto
+lang = id
 
 # --- Ukuran model suara --------------------------------------
 # medium   = terbaik untuk umum (unduhan pertama ±1,5 GB)
