@@ -24,9 +24,15 @@ import os
 import sys
 import time
 import threading
+import warnings
 from datetime import datetime
 
 import numpy as np
+
+# warning "data discontinuity" dari soundcard/Windows MediaFoundation itu
+# benign (transkrip tetap benar — terverifikasi saat uji); senyapkan biar
+# layar bersih untuk pengguna awam
+warnings.filterwarnings("ignore", module="soundcard")
 
 HR = 16000          # sample rate whisper
 CHUNK = 1600        # 0.1 s per potongan loopback
