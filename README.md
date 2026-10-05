@@ -348,6 +348,30 @@ Bahasanya diketik lewat `--lang` (contoh ada di tabel opsi di atas):
 > — default `auto` sudah menangani. Kalau menebaknya sering keliru, kunci
 > bahasanya lewat `config.txt` (`lang = id` untuk rapat Indonesia penuh).
 
+### Pilih model suara — medium vs large-v3-turbo
+
+Tabel model yang bisa dipakai (`--model` atau `model = ...` di config.txt):
+
+| Model | Unduhan sekali | Cocok untuk |
+|---|---|---|
+| `small` | ~480 MB | komputer lemah / tanpa NVIDIA — hasil paling ringkas |
+| `medium` | ~1,5 GB | keseimbangan umum (default terdokumentasi awal) |
+| **`large-v3-turbo`** | ~1,6 GB | **disarankan** — akurasi naik mendekati large-v3, unduhan & beban komputasi hampir sama dengan medium |
+| `large-v3` | ~3,1 GB | paling teliti, tapi butuh VRAM besar (>6 GB); di laptop 3050 4 GB tidak muat (sudah diuji analisa) |
+
+> **Hasil uji di laptop RTX 3050 4 GB:** untuk sampel yang sama, `medium`
+> menulis kata *"aloud"* jadi *"allowed"* — `large-v3-turbo` menulisnya benar,
+> dan tetap muat di VRAM 4 GB (CUDA float16, tanpa kehabisan memori).
+> Karena itu yang dipakai sehari-hari sekarang adalah turbo.
+
+Cara mengaktifkannya sekali saja (config.txt):
+
+```
+  model = large-v3-turbo
+```
+
+atau sekali-jalan: `--model large-v3-turbo`.
+
 ### Internet lambat?
 
 Ganti model yang kecil (unduh hanya ~480 MB):
