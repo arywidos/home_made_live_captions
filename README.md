@@ -36,7 +36,32 @@ ada langkah tambahan (driver BlackHole), lihat bagian **"Instalasi di MacBook"**
 
 ---
 
-## Langkah instalasi
+## Instalasi satu klik (cara termudah)
+
+Di folder program ini ada dua file pemasang otomatis — klik dua kali saja:
+
+| File | Untuk |
+|---|---|
+| **`pasang-captions.bat`** | Windows — cek Python, buat venv, pasang semua pustaka, dan pasang CUDA otomatis bila kartu NVIDIA terdeteksi |
+| **`pasang-captions.command`** | macOS — cek Python, buat venv, pasang pustaka, aktifkan `chmod +x`, dan cek driver BlackHole |
+
+Aman diulang: kalau semuanya sudah terpasang, yang berjalan cuma pemeriksaan
+(beberapa detik, tanpa unduh ulang). Yang tetap manual:
+
+- **Windows:** kalau Python belum ada, pemasang menunjukkan langkahnya
+  (unduh dari python.org, centang **"Add Python to PATH"**, lalu klik lagi
+  file-nya).
+- **macOS:** driver **BlackHole** + **Multi-Output Device** tetap dipasang
+  manual — pemasang menampilkan langkah lengkapnya kalau BlackHole belum ada
+  (detail di bagian macOS langkah 2–3 di bawah).
+
+Unduhan model suara besar tetap terjadi di **run pertama** program (bagian
+peringatan di atas berlaku sama). Kalau mau, langkah instalasi manual di bawah
+tetap bisa dipakai — hasilnya sama.
+
+---
+
+## Langkah instalasi (manual)
 
 Buka program **PowerShell** (klik Start, ketik `powershell`, Enter), lalu
 salin-tempel perintah satu per satu (perintah yang berwarna abu).
