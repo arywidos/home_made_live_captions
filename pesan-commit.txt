@@ -1,8 +1,0 @@
-launcher mic dihapus — mode mic cukup lewat Terminal/argumen
-
-start-caption-mic.bat dihapus biar daftar launcher stabil & sederhana;
-README: tabel launcher (caption-id/en/auto + jalankan), cara mic lewat
-jalankan-captions.bat --mic, catatan peringatan echo output, dan info
-gain otomatis utk mic pelan.
-
-Co-Authored-By: Claude Code <noreply@anthropic.com>
