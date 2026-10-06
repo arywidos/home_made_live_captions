@@ -42,8 +42,8 @@ Di folder program ini ada dua file pemasang otomatis — klik dua kali saja:
 
 | File | Untuk |
 |---|---|
-| **`pasang-captions.bat`** | Windows — cek Python, buat venv, pasang semua pustaka, dan pasang CUDA otomatis bila kartu NVIDIA terdeteksi |
-| **`pasang-captions.command`** | macOS — cek Python, buat venv, pasang pustaka, aktifkan `chmod +x`, dan cek driver BlackHole |
+| **`install-captions.bat`** | Windows — cek Python, buat venv, pasang semua pustaka, dan pasang CUDA otomatis bila kartu NVIDIA terdeteksi |
+| **`install-captions.command`** | macOS — cek Python, buat venv, pasang pustaka, aktifkan `chmod +x`, dan cek driver BlackHole |
 
 Aman diulang: kalau semuanya sudah terpasang, yang berjalan cuma pemeriksaan
 (beberapa detik, tanpa unduh ulang). Yang tetap manual:

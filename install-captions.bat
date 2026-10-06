@@ -1,5 +1,5 @@
 @echo off
-rem pasang-captions.bat - klik dua kali: pasang semua bahan live-captions
+rem install-captions.bat - klik dua kali: pasang semua bahan live-captions
 rem di Windows (Python, kotak alat venv, pustaka, CUDA). Aman diulang:
 rem kalau sudah terpasang, langkah yang berjalan cuma pemeriksaan.
 cd /d "%~dp0"
@@ -78,7 +78,7 @@ exit /b 0
 echo  [!] Python tidak terdeteksi.
 echo      1. Buka https://www.python.org/downloads/windows/
 echo      2. Pasang Python, CENTANG "Add Python to PATH" di pemasang
-echo      3. Setelah terpasang, klik lagi file pasang-captions.bat ini
+echo      3. Setelah terpasang, klik lagi file install-captions.bat ini
 echo.
 pause
 exit /b 1

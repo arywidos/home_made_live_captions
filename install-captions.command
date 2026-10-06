@@ -1,5 +1,5 @@
 #!/bin/bash
-# pasang-captions.command — klik dua kali: pasang semua bahan live-captions
+# install-captions.command — klik dua kali: pasang semua bahan live-captions
 # di macOS (Python → pustaka → cek BlackHole). Aman diulang: kalau sudah
 # terpasang, langkah yang berjalan cuma pemeriksaan.
 cd "$(dirname "$0")" || exit 1
@@ -20,7 +20,7 @@ else
   else
     echo "      1. Buka https://www.python.org/downloads/macos/"
     echo "      2. Unduh dan pasang seperti aplikasi Mac biasa"
-    echo "      3. Klik lagi file pasang-captions.command ini"
+    echo "      3. Klik lagi file install-captions.command ini"
     exit 1
   fi
 fi
@@ -42,7 +42,7 @@ fi
 echo
 
 # -- 4) tombol klik dua kali boleh dipakai ---------------------------------
-chmod +x pasang-captions.command 2>/dev/null
+chmod +x install-captions.command 2>/dev/null
 chmod +x jalankan-captions.command 2>/dev/null
 
 # -- cek BlackHole (wajib di Mac untuk menangkap suara speaker) -------------
