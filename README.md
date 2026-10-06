@@ -227,10 +227,19 @@ Terminal: `./jalankan-captions.command --mic` atau `--lang en`.
 
 ## Cara pakai saat meeting / call
 
-**Windows:** klik dua kali `jalankan-captions.bat`
-**Mac:** klik dua kali `jalankan-captions.command` di Finder (aktifkan dulu sekali: lihat bagian macOS langkah 7), atau dari Terminal: `./jalankan-captions.command`
+**Windows:** klik dua kali salah satu launcher — semuanya menutup otomatis
+sesi live-captions lama yang masih hidup (GPU kartu 4GB memuat model Whisper
+sekaligus satu saja; dua instansi = yang kedua macet):
 
-1. Tunggu hingga muncul `Whisper 'medium' jalan di ...`
+| Launcher | Keperluan |
+|---|---|
+| `caption-id.bat` | suara speaker, bahasa **Indonesia** terkunci |
+| `caption-en.bat` | suara speaker, bahasa **Inggris** terkunci |
+| `caption-auto.bat` | suara speaker, bahasa **otomatis** (isi campur id/en) |
+| `jalankan-captions.bat` | suara speaker, setelan ikut `config.txt` — bisa ditempel argumen |
+| Mac: `jalankan-captions.command` | setara di Mac (aktifkan dulu: `chmod +x`, lihat langkah 7) |
+
+1. Tunggu hingga muncul `Whisper '...' jalan di ...` (model ikut `config.txt`)
 2. Buka WhatsApp Desktop / Zoom / whatever — mulai call
 3. Suara lawan bicara tampil jadi baris `[10:23:41] kalimatnya ...`
    Isi percakapan juga tersimpan di file `live-captions_tanggal-jam.txt`
@@ -273,6 +282,10 @@ Hasilnya otomatis berlabel biar tahu siapa bicara:
 
 ### Menjalankan lewat tombol launcher
 
+> **Tidak ada launcher klik-dukali khusus mic** — sengaja dihapus supaya daftar
+> launcher tetap sederhana dan stabil (mode speaker jarang perlu mic). Mic hanya
+> dijalankan lewat Terminal atau argumen di bawah ini.
+
 Bendera bisa ditempel di belakang file launcher (launcher meneruskan
 semua argumen ke program):
 
@@ -314,7 +327,13 @@ speaker** — akibatnya percakapan lawan tercatat dobel: sekali berlabel
 pengujian (mic laptop menangkap siaran uji terang-terang). Dengan headset —
 earphone kabel maupun Bluetooth — suara lawan tidak bocor ke mic, jadi
 label tetap bersih. Program sendiri menampilkan peringatan ini di layar
-setiap kali `--mic` dinyalakan.
+setiap kali `--mic` dinyalakan — termasuk peringatan khusus bila **Output
+Windows masih ke speaker laptop** (mic akan mendengar semua yang diputar
+komputer); pindahkan Output ke headset: `Win+A` → panah di samping volume.
+
+Mic yang pelan (mic bawaan laptop / headset Bluetooth) tetap tertranskrip:
+program memakai gerbang hening + gain otomatis (pola voice-claude) — muncul
+pesan `(mic pelan → gain otomatis ...)` di awal, itu bagian yang normal.
 
 ---
 
