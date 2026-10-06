@@ -45,6 +45,14 @@ Di folder program ini ada dua file pemasang otomatis — klik dua kali saja:
 | **`install-captions.bat`** | Windows — cek Python, buat venv, pasang semua pustaka, dan pasang CUDA otomatis bila kartu NVIDIA terdeteksi |
 | **`install-captions.command`** | macOS — cek Python, buat venv, pasang pustaka, aktifkan `chmod +x`, dan cek driver BlackHole |
 
+**Tidak perlu unduh repo dulu** — cukup unduh file `install-captions.bat`
+(hanya satu file itu, klik panah Download di halaman file-nya di GitHub),
+simpan di folder mana saja, klik dua kali → pemasang **mengunduh seluruh
+program dari GitHub sendiri** lalu melanjutkan instalasi. Di Mac sama:
+unduh `install-captions.command` saja, klik dua kali (atau jalankan dari
+Terminal, karena Mac kadang "mengunci" file yang diunduh — klik kanan →
+Open sekali saja).
+
 Aman diulang: kalau semuanya sudah terpasang, yang berjalan cuma pemeriksaan
 (beberapa detik, tanpa unduh ulang). Yang tetap manual:
 

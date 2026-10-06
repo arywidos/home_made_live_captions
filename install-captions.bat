@@ -10,6 +10,30 @@ echo   PEMASANGAN CAPTIONS - WINDOWS
 echo  ============================================
 echo.
 
+rem -- 0) ambil program dari GitHub bila folder masih kosong ----------------
+if exist "live-captions.py" goto :repo_ada
+echo  [0/4] Mengunduh program dari GitHub (sekali saja, butuh internet)...
+set "ZIP=%TEMP%\live-captions-repo.zip"
+set "EXT=%TEMP%\live-captions-repo"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest 'https://github.com/arywidos/home_made_live_captions/archive/refs/heads/main.zip' -OutFile '%ZIP%'"
+if errorlevel 1 goto :gagal_unduh
+powershell -NoProfile -Command "Expand-Archive '%ZIP%' -DestinationPath '%EXT%' -Force"
+if errorlevel 1 goto :gagal_unduh
+if not exist "%EXT%\home_made_live_captions-main\live-captions.py" goto :gagal_unduh
+robocopy "%EXT%\home_made_live_captions-main" "%CD%" /E /XF install-captions.bat >nul
+rd /s /q "%EXT%" 2>nul
+del "%ZIP%" 2>nul
+echo  [0/4] Program sudah diunduh ke folder ini.
+echo.
+goto :repo_ada
+:gagal_unduh
+echo   [!] Unduh gagal - cek koneksi internet, lalu klik lagi file ini.
+echo       (atau unduh ZIP manual dari github.com/arywidos/home_made_live_captions)
+echo.
+pause
+exit /b 1
+:repo_ada
+
 rem -- 1) cari Python -----------------------------------------------------
 set "PY="
 where py >nul 2>nul && set "PY=py -3"

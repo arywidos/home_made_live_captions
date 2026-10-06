@@ -9,6 +9,22 @@ echo " PEMASANGAN CAPTIONS - macOS"
 echo "============================================"
 echo
 
+# -- 0) ambil program dari GitHub bila folder masih kosong -----------------
+if [ ! -f live-captions.py ]; then
+  echo "[0/4] Mengunduh program dari GitHub (sekali saja, butuh internet)..."
+  TMPZIP="/tmp/live-captions-repo.zip"
+  TMPEXT="/tmp/live-captions-repo"
+  curl -L -o "$TMPZIP" https://github.com/arywidos/home_made_live_captions/archive/refs/heads/main.zip \
+    || { echo "[!] Unduh gagal - cek koneksi internet, lalu klik lagi file ini."; exit 1; }
+  rm -rf "$TMPEXT" && mkdir -p "$TMPEXT"
+  unzip -q "$TMPZIP" -d "$TMPEXT" \
+    || { echo "[!] Gagal membuka ZIP - coba lagi."; exit 1; }
+  tar -C "$TMPEXT/home_made_live_captions-main" --exclude install-captions.command -cf - . | tar -xf - -C .
+  rm -rf "$TMPEXT" "$TMPZIP"
+  echo "[0/4] Program sudah diunduh ke folder ini."
+  echo
+fi
+
 # -- 1) cari Python 3 ------------------------------------------------------
 if python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' 2>/dev/null; then
   echo "[1/4] Python ada ($(python3 --version 2>&1))."
